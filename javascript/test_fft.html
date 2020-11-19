@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+
+
+
+
+<!-- https://heartbeat.fritz.ai/deep-learning-in-javascript-part-3-2b449d63b152 -->
+<style>
+  body {
+    font-size: 25px;
+  }
+  #display {
+    font-size: 5em;
+    border: 2px black solid;
+    display: inline-block;
+    position: relative;
+    top: 25px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-top: 5px;
+
+  }
+</style>
+</head>
+<body>
+  <h1>The Amazing Vowel Listener</h1>
+  <p>Say a sustained vowel sound into the microphone.<br>
+    I recognize the following American English vowels:<br>
+                      /i/ as in <u>eat</u><br>
+                      /I/ as in <u>i</u>t<br>
+                      /ɛ/ as in g<u>e</u>t<br>
+                      /æ/ as in c<u>a</u>t<br>
+                      /ɚ/ as in h<u>er</u><br>
+                      /ʌ/ as in b<u>u</u>t<br>
+                      /uː/ as in t<u>oo</u><br>
+                      /ʊ/ as in b<u>oo</u>k<br>
+                      /ɑ/ as in f<u>a</u>ther<br>
+                    </p>
+  I hear: <p id="display"></p>
+
+</body>
+<script>
+let array;
+let displayElement = document.getElementById('display')
+navigator.getUserMedia = navigator.getUserMedia ||
+  navigator.webkitGetUserMedia ||
+  navigator.mozGetUserMedia;
+if (navigator.getUserMedia) {
+  navigator.getUserMedia({
+      audio: true
+    },
+    function(stream) {
+      audioContext = new AudioContext();
+      analyser = audioContext.createAnalyser();
+      microphone = audioContext.createMediaStreamSource(stream);
+      javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+
+      analyser.smoothingTimeConstant = 0.1;
+      analyser.fftSize = 1024;
+
+      microphone.connect(analyser);
+      analyser.connect(javascriptNode);
+      javascriptNode.connect(audioContext.destination);
+
+
+
+      javascriptNode.onaudioprocess = function() {
+
+          array = new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(array);
+
+
+
+
+        } // end fn stream
+    },
+    function(err) {
+      console.log("The following error occured: " + err.name)
+    });
+} else {
+  console.log("getUserMedia not supported");
+}
+
+
+// ML stufff
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadModel();
+    setInterval(function () {
+      getit();
+    }, 100);
+}, false);
+
+async function loadModel() {
+
+    model = await tf.loadLayersModel("http://127.0.0.1:8080/model_fft_js/model.json");
+    //model.summary();
+}
+
+async function getit() {
+  let prediction = await model.predict(tf.tensor(getArray()).reshape([1,512]));
+  let vowelID = prediction.argMax([-1]).arraySync()[0];
+  let IPASymbols = ["i as in eat",
+                    "I as in it",
+                    "eh as in get",
+                    "ae as in cat",
+                    "er as in her",
+                    "uh as in but",
+                    "u as in too",
+                    "oo as in book",
+                    "ah as in father"
+                  ];
+  //console.log("prediction: " + vowelID);
+
+  displayElement.innerText = IPASymbols[vowelID];
+}
+
+function getArray() {
+  return array;
+}
+</script>

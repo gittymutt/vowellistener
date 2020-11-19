@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width">
+
+  <title>Make FFT Data</title>
+
+  <link rel="stylesheet" href="">
+  <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+</head>
+<body>
+  <h1>FFT of mic input</h1>
+<canvas id="canvas" width="1024" height="256"></canvas>
+<br>
+<button onclick="export2txt()">Export data to local txt file</button>
+<br>
+<button onclick="on=true">Turn data collection on</button>
+<br>
+<button onclick="on=false">Turn data collection off</button>
+</body>
+<style>
+  canvas {
+    border: solid black 1px;
+  }
+</style>
+<script>
+  on=false;
+let array;
+originalData = [];
+navigator.getUserMedia = navigator.getUserMedia ||
+  navigator.webkitGetUserMedia ||
+  navigator.mozGetUserMedia;
+if (navigator.getUserMedia) {
+  navigator.getUserMedia({
+      audio: true
+    },
+    function(stream) {
+      audioContext = new AudioContext();
+      analyser = audioContext.createAnalyser();
+      microphone = audioContext.createMediaStreamSource(stream);
+      javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+
+      analyser.smoothingTimeConstant = 0.1;
+      analyser.fftSize = 1024;
+
+      microphone.connect(analyser);
+      analyser.connect(javascriptNode);
+      javascriptNode.connect(audioContext.destination);
+
+      canvasContext = document.querySelector("#canvas").getContext("2d");
+      let height = document.querySelector("#canvas").height;
+
+      javascriptNode.onaudioprocess = function() {
+
+          array = new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(array);
+          var values = 0;
+
+          var length = array.length;
+          for (var i = 0; i < length; i++) {
+            values += (array[i]);
+          }
+
+          var average = values / length;
+
+          canvasContext.beginPath();
+          canvasContext.clearRect(0, 0,  1024, 256);
+
+          canvasContext.fillStyle = 'red';
+          for (let i = 1;i<512; i++) {
+            canvasContext.moveTo(i, height);
+            canvasContext.lineTo(i, height-array[i]);
+
+          }
+          canvasContext.stroke();
+          if (on) {getFFTData(array);console.log("on");}
+
+
+        } // end fn stream
+    },
+    function(err) {
+      console.log("The following error occured: " + err.name)
+    });
+} else {
+  console.log("getUserMedia not supported");
+}
+
+function export2txt() {
+
+
+
+
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(originalData, null, 2)], {
+    type: "text/plain"
+  }));
+  a.setAttribute("download", "data.txt");
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
+
+function getFFTData(array) {
+
+    let currentArray = [...array];
+    let FFTdata = new Array();
+    for (let j =0; j<512; j++) {
+      FFTdata[j] = currentArray[j];
+    }
+    originalData.push({ "vowel": [0,0,0,0,0,0,0,0,1], "FFT": FFTdata });
+
+  //console.log(originalData);
+}
+</script>

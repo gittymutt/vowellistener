@@ -1,0 +1,12 @@
+position in one-hot array
+
+i 0
+I 1
+eh 2
+ae 3
+er 4
+uh 5
+u 6
+book 7
+ah 8
+
