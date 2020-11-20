@@ -20,6 +20,7 @@
 <button onclick="on=true">Turn data collection on</button>
 <br>
 <button onclick="on=false">Turn data collection off</button>
+<image src="vowel_chart.jpg">
 </body>
 <style>
   canvas {
@@ -29,6 +30,7 @@
 <script>
   on=false;
 let array;
+let fftSize = Math.pow(2,13);
 originalData = [];
 navigator.getUserMedia = navigator.getUserMedia ||
   navigator.webkitGetUserMedia ||
@@ -44,7 +46,7 @@ if (navigator.getUserMedia) {
       javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
       analyser.smoothingTimeConstant = 0.1;
-      analyser.fftSize = 1024;
+      analyser.fftSize = fftSize;
 
       microphone.connect(analyser);
       analyser.connect(javascriptNode);
@@ -56,6 +58,7 @@ if (navigator.getUserMedia) {
       javascriptNode.onaudioprocess = function() {
 
           array = new Uint8Array(analyser.frequencyBinCount);
+
           analyser.getByteFrequencyData(array);
           var values = 0;
 
@@ -64,18 +67,23 @@ if (navigator.getUserMedia) {
             values += (array[i]);
           }
 
-          var average = values / length;
+          array = smoothen(array);
+          let F1 = getMaxBin(array);
+          //var average = values / length;
 
           canvasContext.beginPath();
-          canvasContext.clearRect(0, 0,  1024, 256);
+          canvasContext.clearRect(0, 0,  fftSize, 256);
 
           canvasContext.fillStyle = 'red';
-          for (let i = 1;i<512; i++) {
+          for (let i = 1;i<Math.round(fftSize/2); i++) {
             canvasContext.moveTo(i, height);
             canvasContext.lineTo(i, height-array[i]);
 
           }
+          canvasContext.moveTo(F1, 0);
+          canvasContext.lineTo(F1, height);
           canvasContext.stroke();
+
           if (on) {getFFTData(array);console.log("on");}
 
 
@@ -89,11 +97,6 @@ if (navigator.getUserMedia) {
 }
 
 function export2txt() {
-
-
-
-
-
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(originalData, null, 2)], {
     type: "text/plain"
@@ -104,16 +107,39 @@ function export2txt() {
   document.body.removeChild(a);
 };
 
-
+//put fft data into an object for exportation
 function getFFTData(array) {
-
     let currentArray = [...array];
     let FFTdata = new Array();
-    for (let j =0; j<512; j++) {
+    for (let j =0; j<Math.round(fftSize/2); j++) {
       FFTdata[j] = currentArray[j];
     }
     originalData.push({ "vowel": [0,0,0,0,0,0,0,0,1], "FFT": FFTdata });
-
   //console.log(originalData);
+}
+
+// moving average to smooth out the fft
+function smoothen(arr) {
+  //sloppyArray = generateArrayOfNumbers(10000000);
+  let win = 40;
+  let total = arr.slice(0,win).reduce((total, num)=> total+num) ;
+  let tidyArray;
+  (tidyArray = []).length = arr.length-win; tidyArray.fill(0);
+  tidyArray[0] = total;
+  for (let i=1; i<arr.length-win+1;i++) {
+    total +=  arr[i+win-1]- arr[i-1];
+    tidyArray[i] = total/win;
+  }
+  return tidyArray;
+}
+
+// return the the bin index with the highest value
+function getMaxBin(arr) {
+  let highest = 0;
+  for (let i=0;i<arr.length;i++) {
+    if (arr[i] > arr[highest]) {highest = i;}
+  }
+  console.log(highest);
+  return highest;
 }
 </script>
