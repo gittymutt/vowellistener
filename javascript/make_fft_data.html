@@ -63,12 +63,14 @@ if (navigator.getUserMedia) {
           var values = 0;
 
           var length = array.length;
-          for (var i = 0; i < length; i++) {
+          for (let i = 0; i < length; i++) {
             values += (array[i]);
           }
 
           array = smoothen(array);
+          //console.log(array.slice(0,10));
           let F1 = getMaxBin(array);
+          //console.log(F1);
           //var average = values / length;
 
           canvasContext.beginPath();
@@ -120,7 +122,6 @@ function getFFTData(array) {
 
 // moving average to smooth out the fft
 function smoothen(arr) {
-  //sloppyArray = generateArrayOfNumbers(10000000);
   let win = 40;
   let total = arr.slice(0,win).reduce((total, num)=> total+num) ;
   let tidyArray;
@@ -135,11 +136,13 @@ function smoothen(arr) {
 
 // return the the bin index with the highest value
 function getMaxBin(arr) {
+  //console.log(arr.slice(0,10));
   let highest = 0;
   for (let i=0;i<arr.length;i++) {
     if (arr[i] > arr[highest]) {highest = i;}
+
   }
-  console.log(highest);
+  //console.log(highest);
   return highest;
 }
 </script>

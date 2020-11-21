@@ -1,3 +1,10 @@
+// You must run this on a server
+// in a terminal go to the directory with this file in it
+// and type python -m http.server
+// then go to localhost:8000 in the browser
+// you may need to give permission to access
+// the microphone
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -95,7 +102,7 @@ if (navigator.getUserMedia) {
 
 async function loadModel() {
 
-    model = await tf.loadLayersModel("http://127.0.0.1:8080/model_fft_js/model.json");
+    model = await tf.loadLayersModel("http://localhost:8000/javascript/model_fft_js/model.json");
     //model.summary();
 }
 
